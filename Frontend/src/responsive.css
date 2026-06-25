@@ -1,0 +1,70 @@
+/* ==================================================
+   GLOBAL RESPONSIVE - HỆ THỐNG ERP (Ant Design)
+   ================================================== */
+
+/* 1. XỬ LÝ THANH MENU (SIDER) BỊ RỚT CHỮ TRÊN MOBILE */
+@media screen and (max-width: 992px) {
+    /* Ép thanh Sidebar ẩn đi hoặc chuyển thành dạng trượt (Drawer) trên Tablet/Mobile */
+    .ant-layout-sider {
+        position: absolute;
+        z-index: 999;
+        height: 100vh;
+        left: -100%; /* Ẩn sang trái mặc định, sẽ dùng nút Hamburger để gọi ra */
+        transition: all 0.3s;
+    }
+    
+    .ant-layout-sider-collapsed {
+        left: 0; /* Khi mở menu */
+    }
+
+    /* Đảm bảo content không bị chèn ép */
+    .ant-layout {
+        margin-left: 0 !important;
+    }
+}
+
+/* 2. SMARTPHONE VIEW (iPhone, Samsung...) - Dưới 768px */
+@media screen and (max-width: 768px) {
+    .ant-layout-content {
+        padding: 10px !important;
+        margin: 0 !important;
+    }
+
+    /* Biến các thẻ Card thống kê thành 1 cột xếp dọc (100% width) */
+    .ant-row .ant-col {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+        margin-bottom: 16px;
+    }
+
+    /* Xử lý Bảng (Table) tự động có thanh trượt ngang, không bóp méo cột */
+    .ant-table-wrapper {
+        max-width: 100vw;
+        overflow-x: auto;
+    }
+    .ant-table {
+        min-width: 800px; /* Ép bảng giữ độ rộng, phần dư sẽ cuộn ngang bằng tay */
+    }
+
+    /* Ép Modal bung full màn hình */
+    .ant-modal {
+        max-width: 100vw !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        top: 0 !important;
+    }
+    .ant-modal-content {
+        border-radius: 0 !important;
+        min-height: 100vh;
+    }
+
+    /* Chỉnh nút bấm, ô tìm kiếm full width */
+    .ant-picker, .ant-select, .ant-input-affix-wrapper, .ant-btn {
+        width: 100% !important;
+    }
+    .table-toolbar {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
