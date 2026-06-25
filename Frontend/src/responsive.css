@@ -1,70 +1,268 @@
-/* ==================================================
-   GLOBAL RESPONSIVE - HỆ THỐNG ERP (Ant Design)
-   ================================================== */
+/* ==========================================================================
+   UNIFIED GLOBAL RESPONSIVE SYSTEM - ERP WORKSPACE (ADMIN & USER)
+   ========================================================================== */
 
-/* 1. XỬ LÝ THANH MENU (SIDER) BỊ RỚT CHỮ TRÊN MOBILE */
-@media screen and (max-width: 992px) {
-    /* Ép thanh Sidebar ẩn đi hoặc chuyển thành dạng trượt (Drawer) trên Tablet/Mobile */
-    .ant-layout-sider {
-        position: absolute;
-        z-index: 999;
-        height: 100vh;
-        left: -100%; /* Ẩn sang trái mặc định, sẽ dùng nút Hamburger để gọi ra */
-        transition: all 0.3s;
-    }
-    
-    .ant-layout-sider-collapsed {
-        left: 0; /* Khi mở menu */
+/* --- 0. RESET & VÁ LỖI TRÀN VIỀN TOÀN CỤC --- */
+html, body, #root, .ant-layout {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    -webkit-tap-highlight-color: transparent; /* Xóa bóng xám khi chạm trên iOS Safari */
+}
+
+/* Chuẩn hóa thanh cuộn mịn, mỏng cho các vùng nội bộ */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   1. CẤU TRÚC CHO TABLET & IPAD (Màn hình từ 769px đến 1024px)
+   ========================================================================== */
+@media screen and (max-width: 1024px) and (min-width: 769px) {
+    .ant-layout-content {
+        padding: 16px !important;
     }
 
-    /* Đảm bảo content không bị chèn ép */
-    .ant-layout {
-        margin-left: 0 !important;
+    .ant-layout-header {
+        padding: 0 16px !important;
+    }
+
+    /* Lưới Dashboard trên Tablet: Ép chia 2 hoặc 3 cột tùy độ rộng để không bị méo */
+    .stats-row > .ant-col {
+        width: 33.333% !important;
+        max-width: 33.333% !important;
+        flex: 0 0 33.333% !important;
     }
 }
 
-/* 2. SMARTPHONE VIEW (iPhone, Samsung...) - Dưới 768px */
+/* ==========================================================================
+   2. CẤU TRÚC CHO SMARTPHONE & IPHONE (Màn hình dưới 768px)
+   ========================================================================== */
 @media screen and (max-width: 768px) {
-    .ant-layout-content {
-        padding: 10px !important;
+    
+    /* --- 2.1 THU GỌN MENU TRÁI (SIDER) THÀNH DẠNG ICON 60PX --- */
+    .ant-layout-sider {
+        position: relative !important;
+        left: 0 !important;
+        min-width: 60px !important;
+        max-width: 60px !important;
+        width: 60px !important;
+        flex: 0 0 60px !important;
+        overflow: hidden !important;
+        z-index: 100 !important;
+        background-color: #001529 !important; /* Đảm bảo giữ màu nền tối đồng bộ */
+    }
+
+    /* Giấu toàn bộ chữ tiếng Việt của Menu đi, chỉ để lại Icon trên iPhone */
+    .ant-layout-sider .ant-menu-item-title,
+    .ant-layout-sider .ant-menu-title-content,
+    .ant-layout-sider .ant-typography,
+    .ant-layout-sider span:not(.anticon) {
+        display: none !important;
+    }
+
+    /* Căn giữa lại các Icon trong thanh menu thu gọn */
+    .ant-layout-sider .ant-menu-item {
+        padding: 0 !important;
+        text-align: center !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    .ant-layout-sider .ant-menu-item .anticon {
+        font-size: 18px !important;
         margin: 0 !important;
     }
 
-    /* Biến các thẻ Card thống kê thành 1 cột xếp dọc (100% width) */
-    .ant-row .ant-col {
+    /* --- 2.2 VÙNG NỘI DUNG CHÍNH (CONTENT) ĐIỀU CHỈNH THEO MENU 60PX --- */
+    .ant-layout-content {
+        width: calc(100vw - 60px) !important; /* Khóa chết độ rộng bằng phần màn hình còn lại */
+        max-width: calc(100vw - 60px) !important;
+        padding: 12px 8px !important;
+        margin: 0 !important;
+        overflow-x: hidden !important;
+    }
+
+    /* --- 2.3 TRIỆT TIÊU LỖI TRÀN CHỮ VÀ THANH CUỘN NGANG TRONG CARD --- */
+    .ant-card, 
+    .ant-card-body, 
+    .ant-list-item, 
+    .ant-timeline,
+    .ant-descriptions {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        word-wrap: break-word !important; /* Ép text/mã hồ sơ quá dài tự động xuống hàng */
+        overflow-wrap: break-word !important;
+        box-sizing: border-box !important;
+    }
+
+    /* --- 2.4 TOP HEADER & MENU NGANG (NẾU CÓ) --- */
+    .ant-layout-header {
+        padding: 0 12px !important;
+        height: 50px !important;
+        line-height: 50px !important;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Ẩn các text phụ rườm rà ở Header trên Mobile */
+    .ant-layout-header .ant-typography,
+    .ant-layout-header h2,
+    .ant-layout-header h3 {
+        display: none !important;
+    }
+
+    /* --- 2.5 LƯỚI DASHBOARD & THẺ THỐNG KÊ XẾP DỌC --- */
+    .stats-row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        gap: 12px 0 !important; /* Tạo khoảng cách dọc đều đặn khi rớt dòng */
+    }
+
+    .stats-row > .ant-col {
         width: 100% !important;
         max-width: 100% !important;
         flex: 0 0 100% !important;
-        margin-bottom: 16px;
     }
 
-    /* Xử lý Bảng (Table) tự động có thanh trượt ngang, không bóp méo cột */
+    /* Tối ưu hóa tiêu đề trang và lịch chọn tháng */
+    .dashboard-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        margin-bottom: 16px !important;
+    }
+    .dashboard-header .ant-picker {
+        width: 100% !important;
+    }
+
+    /* --- 2.6 NÂNG CẤP THANH BỘ LỌC & CÁC Ô NHẬP LIỆU (TOUCH TARGET) --- */
+    .table-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+
+    .filter-group {
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 10px !important;
+    }
+
+    /* Tăng diện tích bấm cho ngón tay trên điện thoại di động (Tối thiểu 40px) */
+    .filter-group .ant-input-affix-wrapper,
+    .filter-group .ant-select,
+    .filter-group .ant-picker,
+    .table-toolbar button,
+    .ant-btn {
+        width: 100% !important;
+        min-height: 40px !important;
+        border-radius: 6px !important;
+        margin: 0 !important;
+    }
+
+    /* --- 2.7 BẢO VỆ AN TOÀN CHO BẢNG DỮ LIỆU (ANT TABLE) --- */
     .ant-table-wrapper {
-        max-width: 100vw;
-        overflow-x: auto;
+        width: 100% !important;
+        overflow-x: auto !important; /* Cho phép vuốt ngang mượt mà nội bộ bảng */
+        -webkit-overflow-scrolling: touch !important; /* Bật cuộn mượt gia tốc iOS */
     }
     .ant-table {
-        min-width: 800px; /* Ép bảng giữ độ rộng, phần dư sẽ cuộn ngang bằng tay */
+        min-width: 850px !important; /* Giữ cố định form bảng để không bị bóp nghẹt chữ */
     }
 
-    /* Ép Modal bung full màn hình */
+    /* --- 2.8 BIẾN ĐỔI MODAL THÀNH GIAO DIỆN FULL MÀN HÌNH --- */
     .ant-modal {
         max-width: 100vw !important;
+        width: 100vw !important;
         margin: 0 !important;
         padding: 0 !important;
         top: 0 !important;
     }
     .ant-modal-content {
         border-radius: 0 !important;
-        min-height: 100vh;
+        min-height: 100vh !important;
+        display: flex;
+        flex-direction: column;
+    }
+    .ant-modal-body {
+        flex: 1;
+        overflow-y: auto !important; /* Cuộn dọc nội bộ khi form nhập liệu quá dài */
+        padding: 16px 12px !important;
+    }
+    .ant-modal-footer {
+        padding: 12px !important;
+        background: #fafafa;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    /* ==================================================
+       BẢN VÁ ĐẶC TRỊ CHO LỖI LỆCH GIAO DIỆN USER (HÌNH 3)
+       ================================================== */
+
+    /* 1. ÉP KHUNG NỘI DUNG VÀO CHÍNH GIỮA, XÓA KHOẢNG TRẮNG BÊN TRÁI */
+    .ant-layout, 
+    .ant-layout-content, 
+    div[style*="margin-left"] {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
     }
 
-    /* Chỉnh nút bấm, ô tìm kiếm full width */
-    .ant-picker, .ant-select, .ant-input-affix-wrapper, .ant-btn {
+    /* 2. ÉP THẺ CHÀO MỪNG (Có tên người dùng) VÀO KHUÔN */
+    .ant-card {
         width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
     }
-    .table-toolbar {
-        flex-direction: column;
-        gap: 12px;
+
+    /* 3. XỬ LÝ 2 NÚT BẤM BỊ TRÀN VIỀN (ÉP XẾP DỌC TRÊN MOBILE) */
+    .ant-space {
+        flex-wrap: wrap !important; /* Cho phép rớt dòng */
+        width: 100% !important;
+        gap: 8px !important; /* Khoảng cách giữa các nút */
+    }
+    
+    .ant-space-item {
+        width: 100% !important; /* Ép phần tử bên trong Space giãn full */
+    }
+
+    .ant-space-item .ant-btn {
+        width: 100% !important;
+        white-space: normal !important; /* Chữ dài tự động xuống hàng trong nút */
+        height: auto !important;
+        min-height: 40px !important;
+        padding: 8px 15px !important;
+    }
+
+    /* 4. GIẢI CỨU THANH MENU NGANG Ở TRÊN CÙNG (CÓ CHỮ TỔNG QUAN, CÔNG VIỆC...) */
+    .ant-menu-horizontal {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important; /* Kích hoạt thanh trượt ngang */
+        -webkit-overflow-scrolling: touch !important; /* Trượt mượt trên iPhone */
+        border-bottom: none !important;
+        padding-bottom: 5px !important;
+    }
+    
+    .ant-menu-horizontal::-webkit-scrollbar {
+        display: none !important; /* Ẩn thanh cuộn xấu xí */
     }
 }

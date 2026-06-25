@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
+import './responsive.css';
 // ----------------------------------------------------------------------
 // 1. IMPORT CÁC TRANG (PAGES) VÀ BỐ CỤC (LAYOUTS)
 // ----------------------------------------------------------------------
