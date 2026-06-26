@@ -1,5 +1,5 @@
 const taskService = require("../services/task.service");
-
+const notificationService = require("../services/notification.service");
 //Import thư viện kết nối Database để chạy lệnh INSERT thông báo
 const { getPool, sql } = require("../config/database"); 
 
@@ -33,40 +33,50 @@ const createTask = async (req, res) => {
         // BƯỚC 1: Lưu công việc vào Database (Qua Service)
         const result = await taskService.createTask(payload, nguoiTaoId);
         
-        // BƯỚC 2: Tạo dữ liệu Chuông thông báo cho từng người nhận
-        try {
-            const tieuDeThongBao = "Chỉ thị công việc mới";
-            const noiDungThongBao = `Bạn vừa được phân công tác vụ: <b>${payload.tieuDe}</b>. Vui lòng kiểm tra và cập nhật tiến độ.`;
-            const duongDanTacVu = "/user/tasks"; // Link chuyển hướng khi bấm vào chuông
-            const pool = await getPool();
-        
 
-            for (const maNguoiNhan of payload.danhSachNguoiNhan) {
-                // Thêm vào bảng ThongBao
-                await pool.request()
-                    .input('MaNguoiNhan', sql.Int, maNguoiNhan)
-                    .input('TieuDe', sql.NVarChar, tieuDeThongBao)
-                    .input('NoiDung', sql.NVarChar, noiDungThongBao)
-                    .input('DaDoc', sql.Bit, 0) // 0 = Chưa đọc
-                    .input('NgayTao', sql.DateTime, new Date())
-                    .input('DuongDan', sql.VarChar, duongDanTacVu)
-                    .query(`
-                        INSERT INTO ThongBao (MaNguoiNhan, TieuDe, NoiDung, DaDoc, NgayTao, DuongDan)
-                        VALUES (@MaNguoiNhan, @TieuDe, @NoiDung, @DaDoc, @NgayTao, @DuongDan)
-                    `);
+        
+        // BƯỚC 2: Tạo dữ liệu Chuông thông báo cho từng người nhận
+       try {
+            if (payload.danhSachNguoiNhan && payload.danhSachNguoiNhan.length > 0) {
+                const pool = await getPool();
                 
-                // Bắn thông báo Real-time qua Socket.io (Nếu có sử dụng)
-                const io = req.app.get('socketio');
-                if (io && global.onlineUsers?.has(String(maNguoiNhan))) {
-                    io.to(global.onlineUsers.get(String(maNguoiNhan))).emit('new_notification', {
-                        title: tieuDeThongBao,
-                        content: noiDungThongBao,
-                        duongDan: duongDanTacVu
-                    });
+                // 1. Quét Database lấy Email của những người được phân công
+                const placeholders = payload.danhSachNguoiNhan.map((_, i) => `@id${i}`).join(',');
+                const request = pool.request();
+                payload.danhSachNguoiNhan.forEach((id, i) => request.input(`id${i}`, sql.Int, id));
+                
+                const users = await request.query(`SELECT MaTaiKhoan, Email FROM TaiKhoan WHERE MaTaiKhoan IN (${placeholders})`);
+                
+                const tieuDeThongBao = "🎯 Chỉ thị công việc mới";
+                const noiDungThongBao = `Bạn vừa được phân công phụ trách tác vụ: <b>${payload.tieuDe}</b>. Vui lòng kiểm tra thời hạn và cập nhật tiến độ.`;
+                const duongDanTacVu = "/user/tasks"; 
+
+                // 2. Chạy vòng lặp bắn thông báo (KHÔNG VIẾT LỆNH INSERT INTO Ở ĐÂY NỮA)
+                for (const user of users.recordset) {
+                    
+                    // 🌟 CHỈ CẦN GỌI DUY NHẤT DÒNG NÀY (Hàm này đã lo hết việc lưu DB và Gửi Mail bên file Service)
+                    await notificationService.createNotification(
+                        user.MaTaiKhoan, 
+                        user.Email, 
+                        tieuDeThongBao, 
+                        noiDungThongBao, 
+                        "TASK", 
+                        duongDanTacVu
+                    );
+
+                    // Bắn Socket.io (Giữ nguyên)
+                    const io = req.app.get('socketio');
+                    if (io && global.onlineUsers?.has(String(user.MaTaiKhoan))) {
+                        io.to(global.onlineUsers.get(String(user.MaTaiKhoan))).emit('new_notification', {
+                            title: tieuDeThongBao,
+                            content: noiDungThongBao,
+                            duongDan: duongDanTacVu
+                        });
+                    }
                 }
             }
         } catch (notifErr) {
-            console.error("⚠️ Lỗi tạo thông báo ngầm (Không làm gián đoạn API):", notifErr.message);
+            console.error("⚠️ Lỗi tạo thông báo công việc ngầm:", notifErr.message);
         }
 
         return res.status(201).json({

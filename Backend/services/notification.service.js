@@ -1,5 +1,5 @@
 const notifRepo = require("../repositories/notification.repository");
-const emailService = require("./email.service");
+const { sendEmail } = require("../services/email.service");
 const { getPool } = require("../config/database");
 const sql = require("mssql");
 
@@ -9,15 +9,16 @@ const createNotification = async (maNguoiNhan, emailNhan, tieuDe, noiDungHtml, l
         
         // 1. Luồng lưu chuông thông báo trên giao diện Web ERP (Hệ thống In-App)
         await pool.request()
-            .input('MaNguoiNhan', sql.Int, maNguoiNhan)
+            // 🌟 ĐÃ FIX: Khớp các giá trị với tham số truyền vào của hàm
+            .input('MaTaiKhoan', sql.Int, maNguoiNhan) 
             .input('TieuDe', sql.NVarChar, tieuDe)
             .input('NoiDung', sql.NVarChar, noiDungHtml)
-            .input('DaDoc', sql.Bit, 0) // Quan trọng: 0 là chưa đọc, Frontend sẽ dựa vào đây hiện chấm đỏ ở quả chuông
+            .input('DaDoc', sql.Bit, 0)
             .input('NgayTao', sql.DateTime, new Date())
-            .input('DuongDan', sql.VarChar, duongDan || "/user/tasks")
+            .input('DuongDan', sql.VarChar, duongDan)
             .query(`
-                INSERT INTO ThongBao (MaNguoiNhan, TieuDe, NoiDung, DaDoc, NgayTao, DuongDan)
-                VALUES (@MaNguoiNhan, @TieuDe, @NoiDung, @DaDoc, @NgayTao, @DuongDan)
+                INSERT INTO ThongBao (MaTaiKhoan, TieuDe, NoiDung, DaDoc, NgayTao, DuongDan)
+                VALUES (@MaTaiKhoan, @TieuDe, @NoiDung, @DaDoc, @NgayTao, @DuongDan)
             `);
 
         // 2. Luồng kích hoạt gửi Email với UX/UI chuẩn Doanh Nghiệp (Trustworthy)
@@ -65,7 +66,7 @@ const createNotification = async (maNguoiNhan, emailNhan, tieuDe, noiDungHtml, l
             </html>
             `;
             
-            await sendEmail(emailNhan, tieuDe, khungHtmlDoanhNghiep);
+           await sendEmail(emailNhan, tieuDe, khungHtmlDoanhNghiep);
         }
         
         return true;

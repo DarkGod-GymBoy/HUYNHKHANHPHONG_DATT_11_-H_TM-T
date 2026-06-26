@@ -7,7 +7,7 @@ const upload = require("../middleware/upload.middleware");
 router.use(verifyToken);
 
 router.get("/", taskController.getAllTasks);
-router.post("/", taskController.createTask);
+router.post("/",upload.array("files", 10), taskController.createTask);
 
 
 router.get("/my-tasks", taskController.getMyTasks);

@@ -10,7 +10,7 @@ const createAndAssignTaskTransaction = async (data) => {
 
     try {
         await transaction.begin();
-
+       
         // [Bước 1] Tạo công việc mẹ - Khớp chính xác các cột của bảng [CongViec]
         const taskResult = await new sql.Request(transaction)
             .input("MaCongViecNoiBo", sql.VarChar(50), maCongViecNoiBo || null)

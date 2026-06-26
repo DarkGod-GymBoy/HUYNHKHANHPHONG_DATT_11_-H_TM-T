@@ -1,6 +1,6 @@
 const proposalService = require("../services/proposal.service");
 const { sql, poolPromise, getPool } = require("../config/database"); 
-
+const notificationService = require("../services/notification.service");
 // ============================================================================
 // 1. TẠO ĐỀ XUẤT (VÀ GỬI THÔNG BÁO CHO NGƯỜI DUYỆT)
 // ============================================================================
@@ -16,49 +16,67 @@ const createProposal = async (req, res) => {
 
         if (!tieuDe) return res.status(400).json({ success: false, message: "Tiêu đề không được để trống" });
 
-        // 🌟 ĐÃ FIX: Lấy mảng files thay vì 1 file đơn lẻ
         const danhSachFile = req.files || []; 
        
         // BƯỚC 1: Lưu Đề xuất vào Database qua Service
         const result = await proposalService.create(tieuDe, noiDung, loaiDeXuat, nguoiNhanDuyet, nguoiTao, danhSachFile, maQuyTrinh);
 
-        // BƯỚC 2: Tự động bắn thông báo cho Danh sách Người duyệt
+        // ====================================================================
+        // BƯỚC 2: TẠO THÔNG BÁO KÉP (CHUÔNG + EMAIL) CHO DANH SÁCH NGƯỜI DUYỆT
+        // ====================================================================
         try {
-            const listNguoiDuyet = typeof nguoiNhanDuyet === "string" 
-                ? nguoiNhanDuyet.split(',').map(id => id.trim()).filter(Boolean) 
-                : (Array.isArray(nguoiNhanDuyet) ? nguoiNhanDuyet : [nguoiNhanDuyet]);
+            // Xử lý danh sách người duyệt thành mảng chuẩn
+            let listNguoiDuyet = [];
+            if (typeof nguoiNhanDuyet === "string") {
+                listNguoiDuyet = nguoiNhanDuyet.split(',').map(id => id.trim()).filter(Boolean);
+            } else if (Array.isArray(nguoiNhanDuyet)) {
+                listNguoiDuyet = nguoiNhanDuyet;
+            } else if (nguoiNhanDuyet) {
+                listNguoiDuyet = [nguoiNhanDuyet];
+            }
 
-            const tieuDeThongBao = "Hồ sơ trình ký mới";
-            const noiDungThongBao = `Bạn có một tờ trình chờ phê duyệt: <b>${tieuDe}</b>. Vui lòng kiểm tra và xử lý.`;
-            const duongDanHoSo = "/user/proposals"; 
-            
-            const pool = await getPool(); 
+            if (listNguoiDuyet.length > 0) {
+                const pool = await getPool(); 
 
-            for (const sepId of listNguoiDuyet) {
-                await pool.request()
-                    .input('MaTaiKhoan', sql.Int, sepId)
-                    .input('TieuDe', sql.NVarChar, tieuDeThongBao)
-                    .input('NoiDung', sql.NVarChar, noiDungThongBao)
-                    .input('DaDoc', sql.Bit, 0)
-                    .input('NgayTao', sql.DateTime, new Date())
-                    .input('DuongDan', sql.VarChar, duongDanHoSo)
-                    .query(`
-                        INSERT INTO ThongBao (MaTaiKhoan, TieuDe, NoiDung, DaDoc, NgayTao, DuongDan)
-                        VALUES (@MaNguoiNhan, @TieuDe, @NoiDung, @DaDoc, @NgayTao, @DuongDan)
-                    `);
+                // 1. Quét Database để lấy Email của những Sếp cần duyệt
+                const placeholders = listNguoiDuyet.map((_, i) => `@id${i}`).join(',');
+                const request = pool.request();
+                listNguoiDuyet.forEach((id, i) => request.input(`id${i}`, sql.Int, id));
                 
-                const io = req.app.get('socketio');
-                if (io && global.onlineUsers?.has(String(sepId))) {
-                    io.to(global.onlineUsers.get(String(sepId))).emit('new_notification', {
-                        title: tieuDeThongBao,
-                        content: noiDungThongBao,
-                        duongDan: duongDanHoSo
-                    });
+                const users = await request.query(`SELECT MaTaiKhoan, Email FROM TaiKhoan WHERE MaTaiKhoan IN (${placeholders})`);
+
+                const tieuDeThongBao = "📝 Hồ sơ trình ký mới";
+                const noiDungThongBao = `Bạn có một tờ trình chờ phê duyệt: <b>${tieuDe}</b>. Vui lòng kiểm tra và xử lý.`;
+                const duongDanHoSo = "/user/proposals"; 
+                
+                // 2. Chạy vòng lặp bắn thông báo KÉP cho từng Sếp
+                for (const user of users.recordset) {
+                    
+                    // 🌟 GỌI SERVICE ĐỂ LÀM THAY VIỆC: Vừa lưu DB, vừa tự bắn Email
+                    await notificationService.createNotification(
+                        user.MaTaiKhoan, 
+                        user.Email, 
+                        tieuDeThongBao, 
+                        noiDungThongBao, 
+                        "PROPOSAL", 
+                        duongDanHoSo
+                    );
+                    
+                    // Bắn Socket.io báo đỏ quả chuông ngay lập tức (Nếu sếp đang online)
+                    const io = req.app.get('socketio');
+                    if (io && global.onlineUsers?.has(String(user.MaTaiKhoan))) {
+                        io.to(global.onlineUsers.get(String(user.MaTaiKhoan))).emit('new_notification', {
+                            title: tieuDeThongBao,
+                            content: noiDungThongBao,
+                            duongDan: duongDanHoSo
+                        });
+                    }
                 }
             }
         } catch (notifErr) {
             console.error("⚠️ Lỗi tạo thông báo ngầm:", notifErr.message);
         }
+        // ====================================================================
 
         return res.status(201).json({ success: true, data: result });
     } catch (error) {
